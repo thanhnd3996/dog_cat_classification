@@ -3,6 +3,7 @@ from sklearn.model_selection import train_test_split
 from keras import Model
 from keras.callbacks import ModelCheckpoint
 from keras.applications.resnet50 import ResNet50
+from keras.preprocessing.image import ImageDataGenerator
 from keras.layers import GlobalAveragePooling2D, Dropout, Dense
 from imutils import paths
 import numpy as np
@@ -57,6 +58,10 @@ lb = LabelBinarizer()
 y_train = lb.fit_transform(y_train)
 y_test = lb.transform(y_test)
 
+# pre-processing
+aug = ImageDataGenerator(rotation_range=30, width_shift_range=0.1,
+                         height_shift_range=0.1, shear_range=0.2, zoom_range=0.2,
+                         horizontal_flip=True, fill_mode="nearest")
 # init the model and optimizer
 base_model = ResNet50(weights='imagenet', include_top=False)
 for layer in base_model.layers:
@@ -76,11 +81,10 @@ model.compile(loss="categorical_crossentropy",
 # train the network
 file_path = './checkpoints/model/h5'
 checkpoints = ModelCheckpoint(file_path, save_best_only=True, verbose=1, monitor='val_acc', mode='max')
-model.fit(x_train, y_train, batch_size=batch_size,
-          validation_data=(x_test, y_test),
-          epochs=epochs,
-          verbose=1,
-          callbacks=[checkpoints])
+model.fit_generator(aug.flow(x_train, y_train, batch_size=batch_size),
+                    validation_data=(x_test, y_test), steps_per_epoch=len(x_train) // batch_size,
+                    epochs=epochs,
+                    callbacks=[checkpoints])
 
 # result
 score = model.evaluate(x_test, y_test, verbose=0)
