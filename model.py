@@ -1,6 +1,6 @@
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.model_selection import train_test_split
-from keras import Sequential
+from keras import Model
 from keras.callbacks import ModelCheckpoint
 from keras.applications.resnet50 import ResNet50
 from keras.layers import GlobalAveragePooling2D, Dropout, Dense
@@ -50,7 +50,7 @@ data = np.array(data, dtype='float') / 255
 labels = np.array(labels)
 
 # partition the data into training and validation
-(x_train, x_test, y_train, y_test) = train_test_split(data, labels, test_size=0.04182, random_state=42)
+(x_train, x_test, y_train, y_test) = train_test_split(data, labels, test_size=0.3, random_state=42)
 
 # convert the labels from integers to vectors
 lb = LabelBinarizer()
@@ -59,11 +59,13 @@ y_test = lb.transform(y_test)
 
 # init the model and optimizer
 base_model = ResNet50(weights='imagenet', include_top=False)
-train_features = base_model.predict(x_train)
-model = Sequential()
-model.add(GlobalAveragePooling2D(input_shape=train_features))
-model.add(Dropout(0.3))
-model.add(Dense(10, activation='softmax'))
+for layer in base_model.layers:
+    layer.trainable = False
+x = base_model.output
+x = GlobalAveragePooling2D()(x)
+x = Dropout(0.3)(x)
+preds = Dense(10, activation='softmax')(x)
+model = Model(inputs=base_model.input, outputs=preds)
 
 # model = ResNet50(weights='imagenet', include_top=False)
 print("[INFO] training network...")
