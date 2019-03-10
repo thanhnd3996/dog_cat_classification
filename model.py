@@ -1,10 +1,8 @@
 from pretrained.smallvggnet import SmallVGGNet
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.model_selection import train_test_split
-# from keras import Sequential
 from keras.callbacks import ModelCheckpoint
 from keras.preprocessing.image import ImageDataGenerator
-# from keras.layers import Conv2D, MaxPooling2D, Flatten, Dropout, Dense
 from imutils import paths
 import numpy as np
 import argparse
@@ -39,10 +37,10 @@ random.shuffle(image_paths)
 for image_path in image_paths:
     image = cv2.imread(image_path, 0)
     image = cv2.resize(image, (64, 64))
-    # image = np.reshape(image, (64, 64, 1))
+    image = np.reshape(image, (64, 64, 1))
     data.append(image)
     label = image_path.split(os.path.sep)[-2]
-    # label = np.reshape(label, -1)
+    label = np.reshape(label, -1)
     labels.append(label)
 
 data = np.array(data, dtype="float") / 255.0
@@ -73,22 +71,13 @@ aug = ImageDataGenerator(featurewise_center=True,
                          fill_mode="nearest")
 
 # init the model and optimizer
-# model = Sequential()
-# model.add(Conv2D(32, (3, 3), input_shape=(64, 64, 1), activation='relu'))
-# model.add(Conv2D(64, (3, 3), activation='relu'))
-# model.add(MaxPooling2D(pool_size=(2, 2)))
-# model.add(Dropout(0.25))
-# model.add(Flatten())
-# model.add(Dense(units=128, activation='relu'))
-# model.add(Dropout(0.5))
-# model.add(Dense(units=len(lb.classes_), activation='softmax'))
-model = SmallVGGNet.build(width=64, height=64, depth=3, classes=len(lb.classes_))
+model = SmallVGGNet.build(width=64, height=64, depth=1, classes=len(lb.classes_))
 
 # train the network
 file_path = './checkpoints/model/h5'
 checkpoints = ModelCheckpoint(file_path, save_best_only=True, verbose=1, monitor='val_acc', mode='max')
 print("[INFO] training network...")
-model.compile(loss="binary_crossentropy",
+model.compile(loss="sparse_categorical_crossentropy",
               optimizer="adadelta",
               metrics=['accuracy'])
 model.fit_generator(aug.flow(x_train, y_train, batch_size=batch_size),
