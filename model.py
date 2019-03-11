@@ -74,7 +74,7 @@ aug = ImageDataGenerator(featurewise_center=True,
 model = SmallVGGNet.build(width=64, height=64, depth=1, classes=len(lb.classes_))
 
 # train the network
-file_path = './checkpoints/model/h5'
+file_path = './checkpoints/model.h5'
 checkpoints = ModelCheckpoint(file_path, save_best_only=True, verbose=1, monitor='val_acc', mode='max')
 print("[INFO] training network...")
 model.compile(loss="sparse_categorical_crossentropy",
